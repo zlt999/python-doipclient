@@ -90,13 +90,14 @@ class Parser:
             self.rx_buffer = self.rx_buffer[remaining_bytes:]
             if len(self.payload) == self.payload_size:
                 self._state = Parser.ParserState.READ_PROTOCOL_VERSION
-                logger.debug(
-                    "Received DoIP Message. Type: 0x{:X}, Payload Size: {} bytes, Payload: {}".format(
-                        self.payload_type,
-                        self.payload_size,
-                        " ".join(f"{byte:02X}" for byte in self.payload),
+                if logger.hasHandlers():  # Save time from " ".join if no need to log
+                    logger.debug(
+                        "Received DoIP Message. Type: 0x{:X}, Payload Size: {} bytes, Payload: {}".format(
+                            self.payload_type,
+                            self.payload_size,
+                            " ".join(f"{byte:02X}" for byte in self.payload),
+                        )
                     )
-                )
                 try:
                     return payload_type_to_message[self.payload_type].unpack(
                         self.payload, self.payload_size
@@ -361,13 +362,14 @@ class DoIPClient:
         payload_type = payload_message_to_type[type(message)]
 
         data_bytes = cls._pack_doip(protocol_version, payload_type, payload_data)
-        logger.debug(
-            "Sending DoIP Vehicle Identification Request: Type: 0x{:X}, Payload Size: {}, Payload: {}".format(
-                payload_type,
-                len(payload_data),
-                " ".join(f"{byte:02X}" for byte in payload_data),
+        if logger.hasHandlers():  # Save time from " ".join if no need to log
+            logger.debug(
+                "Sending DoIP Vehicle Identification Request: Type: 0x{:X}, Payload Size: {}, Payload: {}".format(
+                    payload_type,
+                    len(payload_data),
+                    " ".join(f"{byte:02X}" for byte in payload_data),
+                )
             )
-        )
         sock.sendto(data_bytes, (ecu_ip_address, UDP_DISCOVERY))
 
         return cls.await_vehicle_announcement(timeout=A_DOIP_CTRL, sock=sock)
@@ -497,13 +499,14 @@ class DoIPClient:
         retry = self._auto_reconnect_tcp and not disable_retry
 
         data_bytes = self._pack_doip(self._protocol_version, payload_type, payload_data)
-        logger.debug(
-            "Sending DoIP Message: Type: 0x{:X}, Payload Size: {}, Payload: {}".format(
-                payload_type,
-                len(payload_data),
-                " ".join(f"{byte:02X}" for byte in payload_data),
+        if logger.hasHandlers():  # Save time from " ".join if no need to log
+            logger.debug(
+                "Sending DoIP Message: Type: 0x{:X}, Payload Size: {}, Payload: {}".format(
+                    payload_type,
+                    len(payload_data),
+                    " ".join(f"{byte:02X}" for byte in payload_data),
+                )
             )
-        )
 
         # The ECU is well within its rights to have closed the socket since we last sent it data -
         # particularly if the tester has been quiet for a while. For TCP there's two possibilities
