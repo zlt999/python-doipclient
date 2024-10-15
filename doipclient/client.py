@@ -165,12 +165,14 @@ class DoIPClient:
         protocol_version=0x02,
         client_logical_address=0x0E00,
         client_ip_address=None,
+        client_port=None,
         use_secure=False,
         auto_reconnect_tcp=False,
     ):
         self._ecu_logical_address = ecu_logical_address
         self._client_logical_address = client_logical_address
         self._client_ip_address = client_ip_address
+        self._client_port = client_port
         self._use_secure = use_secure
         self._ecu_ip_address = ecu_ip_address
         self._tcp_port = tcp_port
@@ -765,7 +767,10 @@ class DoIPClient:
         self._tcp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
         self._tcp_sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
         if self._client_ip_address is not None:
-            self._tcp_sock.bind((self._client_ip_address, 0))
+            if self._client_port is not None:
+                self._tcp_sock.bind((self._client_ip_address, self._client_port))
+            else:
+                self._tcp_sock.bind((self._client_ip_address, 0))
         self._tcp_sock.connect((self._ecu_ip_address, self._tcp_port))
         self._tcp_sock.settimeout(A_PROCESSING_TIME)
         self._tcp_close_detected = False
@@ -774,7 +779,10 @@ class DoIPClient:
         self._udp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self._udp_sock.settimeout(A_PROCESSING_TIME)
         if self._client_ip_address is not None:
-            self._udp_sock.bind((self._client_ip_address, 0))
+            if self._client_port is not None:
+                self._udp_sock.bind((self._client_ip_address, self._client_port))
+            else:
+                self._udp_sock.bind((self._client_ip_address, 0))
 
         if self._use_secure:
             if isinstance(self._use_secure, ssl.SSLContext):
